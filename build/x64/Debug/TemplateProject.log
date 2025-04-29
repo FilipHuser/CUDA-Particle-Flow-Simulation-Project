@@ -1,0 +1,72 @@
+﻿  Compiling CUDA source file src\Runner.cu...
+  
+  C:\Users\Filip\Desktop\PROJECTS\CPFSP>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin\nvcc.exe" -gencode=arch=compute_75,code=\"sm_75,compute_75\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include"  -G   --keep-dir build\x64\Debug\  -maxrregcount=0 --ptxas-options=-v   --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MTd " -Xcompiler "/Fdbuild\x64\Debug\vc143.pdb" -o C:\Users\Filip\Desktop\PROJECTS\CPFSP\build\x64\Debug\\Runner.cu.obj "C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu" 
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(585): warning #177-D: variable "PARTICLE_ALPHA" was declared but never referenced
+        const int PARTICLE_ALPHA = 255;
+                  ^
+  
+  Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(586): warning #177-D: variable "PARTICLE_WEIGHT" was declared but never referenced
+        const int PARTICLE_WEIGHT = 20;
+                  ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(587): warning #177-D: variable "PARTICLE_RADIUS" was declared but never referenced
+        const int PARTICLE_RADIUS = 5;
+                  ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(589): warning #177-D: variable "running" was declared but never referenced
+        bool running = true;
+             ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(591): warning #177-D: variable "blocks" was declared but never referenced
+        int blocks = (NUMBER_OF_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+            ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(592): warning #177-D: variable "seed" was declared but never referenced
+        unsigned int seed = 10;
+                     ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(594): warning #177-D: variable "Dparticles" was declared but never referenced
+        float2* Dparticles = nullptr;
+                ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(32): warning #177-D: variable "backgroundCollor" was declared but never referenced
+    constexpr uchar3 backgroundCollor = { 0 , 0 ,0 };
+                     ^
+  
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(33): warning #177-D: variable "wallCollor" was declared but never referenced
+    const uchar3 wallCollor = { 0 , 255 , 0 };
+                 ^
+  
+  ptxas info    : 218048 bytes gmem, 72 bytes cmem[3]
+  ptxas info    : Compiling entry function '_Z12ConstructMapyiiPh' for 'sm_75'
+  ptxas info    : Function properties for _Z12ConstructMapyiiPh
+      8 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+  ptxas info    : Used 36 registers, used 0 barriers, 88 bytes cumulative stack size, 376 bytes cmem[0]
+  ptxas info    : Compile time = 0.000 ms
+  ptxas info    : Compiling entry function '_Z18randomizeParticlesP6float2iffffj' for 'sm_75'
+  ptxas info    : Function properties for _Z18randomizeParticlesP6float2iffffj
+      136 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+  ptxas info    : Used 56 registers, used 0 barriers, 144 bytes cumulative stack size, 384 bytes cmem[0]
+  ptxas info    : Compile time = 0.000 ms
+  ptxas info    : Function properties for _ZN36_INTERNAL_f011f856_9_Runner_cu_error5tex2DI6uchar4EEN15__nv_itex_traitIT_E4typeEPS3_yff
+      40 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+  ptxas info    : Compile time = 0.000 ms
+  ptxas info    : Function properties for _ZN36_INTERNAL_f011f856_9_Runner_cu_error11make_float2Eff
+      8 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+  ptxas info    : Compile time = 0.000 ms
+  ptxas info    : Function properties for _ZN36_INTERNAL_f011f856_9_Runner_cu_error5tex2DI6uchar4EET_yff
+      40 bytes stack frame, 32 bytes spill stores, 32 bytes spill loads
+  ptxas info    : Compile time = 0.000 ms
+  Runner.cu
+  tmpxft_0000500c_00000000-7_Runner.cudafe1.cpp
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(354): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Filip\Desktop\PROJECTS\CPFSP\src\Runner.cu(356): warning C4018: '<': signed/unsigned mismatch
+  TemplateProject.vcxproj -> C:\Users\Filip\Desktop\PROJECTS\CPFSP\bin\x64\Debug\TemplateProject.exe
+  .\common\FreeGlut\windows\bin\x64\freeglut.dll
+          1 file(s) copied.
+  .\common\Glew\windows\bin\x64\glew64.dll
+          1 file(s) copied.
+  .\common\FreeImage\windows\bin\x64\FreeImage.dll
+          1 file(s) copied.

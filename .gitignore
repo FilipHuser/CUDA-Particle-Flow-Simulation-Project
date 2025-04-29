@@ -1,4 +1,20 @@
-build
-.out
-.vs
-bin
+# Ignore Visual Studio files
+.vs/
+.vscode/
+*.sln
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Ignore build results
+/bin/
+/obj/
+
+# Ignore package directories
+/packages/
+
+# Ignore compiled files
+*.dll
+*.exe
+*.pdb

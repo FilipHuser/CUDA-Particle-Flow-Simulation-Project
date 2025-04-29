@@ -2,6 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="src\Runner.cu" />
-    <CudaCompile Include="src\.Runner.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\FlowField.h" />
+    <ClInclude Include="src\Map.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\vertexShader.vert" />
+    <None Include="shaders\fragmentShader.frag" />
   </ItemGroup>
 </Project>

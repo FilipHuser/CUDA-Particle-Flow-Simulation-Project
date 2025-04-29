@@ -8,10 +8,14 @@
 
 #include <curand_kernel.h>
 
-
 #include <imageManager.h>
 #include <imageUtils.cuh>
 #include <benchmark.h>
+
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 #include "Map.h"
 #include "FlowField.h"
@@ -23,36 +27,16 @@ cudaDeviceProp deviceProp = cudaDeviceProp();
 using DT = uchar4;
 
 int GRID_SIZE = 64;
-int NUMBER_OF_PARTICLES = 1024;
+int NUMBER_OF_PARTICLES = 1;
 
 constexpr uchar3 backgroundCollor = { 0 , 0 ,0 };
 const uchar3 wallCollor = { 0 , 255 , 0 };
 
-const char* vertexShaderSrc = R"(
-#version 330 core
-layout(location = 0) in vec2 aPosition;
-uniform float uPointSize;
-void main() {
-    gl_Position = vec4(aPosition, 0.0, 1.0);
-    gl_PointSize = uPointSize;
-}
-)";
-
-const char* fragmentShaderSrc = R"(
-#version 330 core
-uniform vec4 uColor;
-out vec4 FragColor;
-void main() {
-    float dist = length(gl_PointCoord - vec2(0.5));
-    if (dist > 0.5) discard;
-    FragColor = uColor;
-}
-)";
-
 GLuint shaderProgram;
 GLuint particleVBO;
-cudaGraphicsResource* cudaVBOResource;
+GLuint particlePBO;
 
+cudaGraphicsResource* cudaVBOResource;
 
 // Struktura pro uchování údajů o OpenGL datech
 struct GLData
@@ -116,19 +100,17 @@ void display()
 {
     // OpenGL Rendering
     glClear(GL_COLOR_BUFFER_BIT);
+    glUseProgram(shaderProgram);
 
     // Define the color as a float array (RGBA)
-    float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red color (RGBA)
+    //float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red color (RGBA)
 
-    // Get the location of the uniform 'uColor' in the shader
-    GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
-    GLuint uPointSizeLocation = glGetUniformLocation(shaderProgram, "uPointSize");
-
-    //glUseProgram(shaderProgram);
+    //GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
+    //GLuint uPointSizeLocation = glGetUniformLocation(shaderProgram, "uPointSize");
 
     // Set the uniform color value using the float array
-    glUniform4fv(colorLoc, 1, color);
-    glUniform1f(uPointSizeLocation, NUMBER_OF_PARTICLES);
+    //glUniform4fv(colorLoc, 1, color);
+    //glUniform1f(uPointSizeLocation, 1);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, RenderTexture.textureID);
@@ -146,7 +128,6 @@ void display()
     // Swap buffers to display the updated texture
     glutSwapBuffers();
 }
-
 
 void my_resize(GLsizei w, GLsizei h)
 {
@@ -256,7 +237,6 @@ void cudaWorker()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void my_idle()
 {
     cudaWorker();
@@ -267,24 +247,47 @@ void my_idle()
     glutPostRedisplay();
 }
 
-GLuint createShader(GLenum type, const char* src) {
+// Utility to read a shader file into a string
+std::string loadShaderSource(const std::string& path) {
+    std::ifstream file(path);
+    std::stringstream buffer;
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << path << std::endl;
+        return "";
+    }
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+// Compile a single shader
+GLuint createShader(GLenum type, const std::string& source) {
     GLuint shader = glCreateShader(type);
+    const char* src = source.c_str();
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);
 
-    // Optional: error checking
+    // Check compile status
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cerr << "Shader Compile Error:\n" << infoLog << std::endl;
+        std::cerr << "Shader Compilation Error:\n" << infoLog << std::endl;
     }
 
     return shader;
 }
 
-GLuint createShaderProgram() {
+// Create shader program from vertex and fragment shader file paths
+GLuint createShaderProgram(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
+    std::string vertexShaderSrc = loadShaderSource(vertexShaderPath);
+    std::string fragmentShaderSrc = loadShaderSource(fragmentShaderPath);
+
+    if (vertexShaderSrc.empty() || fragmentShaderSrc.empty()) {
+        std::cerr << "Shader source is empty, cannot create program." << std::endl;
+        return 0;
+    }
+
     GLuint vs = createShader(GL_VERTEX_SHADER, vertexShaderSrc);
     GLuint fs = createShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
 
@@ -293,7 +296,7 @@ GLuint createShaderProgram() {
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    // Optional: program link error checking
+    // Check link status
     GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
@@ -302,8 +305,10 @@ GLuint createShaderProgram() {
         std::cerr << "Shader Link Error:\n" << infoLog << std::endl;
     }
 
+    // Clean up
     glDeleteShader(vs);
     glDeleteShader(fs);
+
     return program;
 }
 
@@ -435,9 +440,7 @@ void initCUDAObjects()
     // Registrace PBO pro zápis do CUDA
     cudaGraphicsGLRegisterBuffer(&FloatFieldCudaData.pboResource, FloatFieldTexture.pboID, cudaGraphicsRegisterFlagsWriteDiscard);
 
-
     //-----------------------
-
 
     // Register the RenderTexture texture for CUDA (read-write)
     checkCudaErrors(cudaGraphicsGLRegisterImage(&RenderTextureCudaData.texResource, RenderTexture.textureID, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard));
@@ -471,7 +474,6 @@ void createSharedVBO(int numberOfParticles) {
     glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float2) * numberOfParticles, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     cudaGraphicsGLRegisterBuffer(&cudaVBOResource, particleVBO, cudaGraphicsMapFlagsWriteDiscard);
 }
 
@@ -489,6 +491,7 @@ __global__ void randomizeParticles(float2* particles, int count, float minX, flo
     particles[i] = make_float2(x, y);
 
 }
+
 void fillParticlesWithCUDA(int numberOfParticles, float minX, float maxX, float minY, float maxY, unsigned int seed)
 {
     float2* dptr;
@@ -499,11 +502,6 @@ void fillParticlesWithCUDA(int numberOfParticles, float minX, float maxX, float 
     int blocks = (numberOfParticles + threadsPerBlock - 1) / threadsPerBlock;
     randomizeParticles << <blocks, threadsPerBlock >> > (dptr, numberOfParticles, minX, maxX, minY, maxY, seed);
     cudaGraphicsUnmapResources(1, &cudaVBOResource, 0);
-}
-
-void allocateParticles(float2** Dparticles, int numberOfParticles)
-{
-    cudaMalloc((void**)Dparticles, numberOfParticles * sizeof(float2));
 }
 
 void releaseOpenGL()
@@ -532,7 +530,10 @@ int main(int argc, char* argv[])
     FreeImage_Initialise();
     initGL(argc, argv);
 
-    shaderProgram = createShaderProgram();
+    std::string vertShaderPath = "shaders/vertexShader.vert";
+    std::string fragShaderPath = "shaders/fragmentShader.frag";
+
+    shaderProgram = createShaderProgram(vertShaderPath , fragShaderPath);
 
     Map* map = new Map(32);
     map->setWall(10, 10);
@@ -556,8 +557,8 @@ int main(int argc, char* argv[])
     generateRenderTexture();
 
     //TEST
-    saveOpenGLTexture(FloatFieldTexture.textureID, FloatFieldTexture.imageWidth, FloatFieldTexture.imageHeight, "flowField.png");
-    saveOpenGLTexture(RenderTexture.textureID, RenderTexture.imageWidth, RenderTexture.imageHeight, "render.png");
+    //saveOpenGLTexture(FloatFieldTexture.textureID, FloatFieldTexture.imageWidth, FloatFieldTexture.imageHeight, "flowField.png");
+    //saveOpenGLTexture(RenderTexture.textureID, RenderTexture.imageWidth, RenderTexture.imageHeight, "render.png");
 
     initCUDAObjects();
 
@@ -575,8 +576,6 @@ int main(int argc, char* argv[])
     createSharedVBO(NUMBER_OF_PARTICLES);
     fillParticlesWithCUDA(NUMBER_OF_PARTICLES, 0, 10, 0, 10, 10);
 
-    allocateParticles(&Dparticles, NUMBER_OF_PARTICLES);
-    randomizeParticles <<<blocks,threadsPerBlock>>> (Dparticles, NUMBER_OF_PARTICLES,-10.0f, 10.0f,-5.0f, 5.0f,seed);
     cudaDeviceSynchronize();
 
     glutMainLoop();

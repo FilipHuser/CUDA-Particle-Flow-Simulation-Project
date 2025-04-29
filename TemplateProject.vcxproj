@@ -17,6 +17,10 @@
     <ClInclude Include="src\FlowField.h" />
     <ClInclude Include="src\Map.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\fragmentShader.frag" />
+    <None Include="shaders\vertexShader.vert" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8DBC398B-00A0-4734-A4F5-21CD8434600C}</ProjectGuid>
     <RootNamespace>TemplateProject</RootNamespace>
