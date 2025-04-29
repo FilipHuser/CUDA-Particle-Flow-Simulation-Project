@@ -27,7 +27,7 @@ cudaDeviceProp deviceProp = cudaDeviceProp();
 using DT = uchar4;
 
 int GRID_SIZE = 64;
-int NUMBER_OF_PARTICLES = 1;
+int NUMBER_OF_PARTICLES = 1 << 20;
 
 constexpr uchar3 backgroundCollor = { 0 , 0 ,0 };
 const uchar3 wallCollor = { 0 , 255 , 0 };
@@ -100,22 +100,13 @@ void display()
 {
     // OpenGL Rendering
     glClear(GL_COLOR_BUFFER_BIT);
-    glUseProgram(shaderProgram);
 
-    // Define the color as a float array (RGBA)
-    //float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red color (RGBA)
-
-    //GLuint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
-    //GLuint uPointSizeLocation = glGetUniformLocation(shaderProgram, "uPointSize");
-
-    // Set the uniform color value using the float array
-    //glUniform4fv(colorLoc, 1, color);
-    //glUniform1f(uPointSizeLocation, 1);
-
+    // Step 1: Render the texture (background)
+    glUseProgram(0);  // Use default program to render the texture
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, RenderTexture.textureID);
 
-    // Draw the quad
+    // Draw the textured quad
     glBegin(GL_QUADS);
     glTexCoord2d(0, 0);          glVertex2d(0, 0);
     glTexCoord2d(1, 0);          glVertex2d(RenderTexture.viewportWidth, 0);
@@ -125,9 +116,28 @@ void display()
 
     glDisable(GL_TEXTURE_2D);  // Disable texturing after drawing the quad
 
-    // Swap buffers to display the updated texture
+    // Step 2: Render particles with the shader
+    glUseProgram(shaderProgram);  // Use the particle shader program
+
+    // Bind the particle VBO
+    glBindBuffer(GL_ARRAY_BUFFER, particleVBO);
+
+    // Set the position attribute
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "inPosition");
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, sizeof(float2), (void*)0);
+    glEnableVertexAttribArray(posAttrib);
+
+    // Draw the particles
+    glDrawArrays(GL_POINTS, 0, NUMBER_OF_PARTICLES);  // Draw the points as particles
+
+    // Cleanup
+    glDisableVertexAttribArray(posAttrib);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);  // Unbind the VBO
+
+    // Step 3: Swap buffers to display the updated texture and particles
     glutSwapBuffers();
 }
+
 
 void my_resize(GLsizei w, GLsizei h)
 {
@@ -574,7 +584,7 @@ int main(int argc, char* argv[])
     float2* Dparticles = nullptr;
 
     createSharedVBO(NUMBER_OF_PARTICLES);
-    fillParticlesWithCUDA(NUMBER_OF_PARTICLES, 0, 10, 0, 10, 10);
+    fillParticlesWithCUDA(NUMBER_OF_PARTICLES, -0.5, 0.5, -0.5, 0.5, 10);
 
     cudaDeviceSynchronize();
 
